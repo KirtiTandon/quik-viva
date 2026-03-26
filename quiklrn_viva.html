@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Quiklrn AI - Professional Career Viva</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root { --primary: #7A319F; --accent: #c97ee8; --bg: #f8f9fc; --success: #00b894; --danger: #ff4757; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        
+        .card { width: 100%; max-width: 480px; background: white; border-radius: 30px; padding: 35px; box-shadow: 0 20px 60px rgba(122,49,159,0.1); position: relative; overflow: hidden; min-height: 600px; }
+        .screen { display: none; animation: slideUp 0.4s ease; }
+        .active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Step 1: Upload UI */
+        .logo { font-size: 10px; letter-spacing: 4px; color: var(--primary); font-weight: 900; margin-bottom: 25px; text-transform: uppercase; text-align: center; }
+        .upload-zone { border: 2px dashed #ddd; padding: 25px; border-radius: 20px; margin-top: 15px; transition: 0.3s; cursor: pointer; text-align: center; font-size: 14px; color: #666; }
+        .upload-zone:hover { border-color: var(--primary); background: #fdfbff; }
+        .upload-zone.done { border-color: var(--success); background: #f0fff4; color: var(--success); font-weight: bold; }
+
+        /* Timer UI */
+        .timer-container { position: absolute; top: 20px; right: 25px; width: 50px; height: 50px; }
+        .timer-svg { transform: rotate(-90deg); width: 50px; height: 50px; }
+        .timer-bg { fill: none; stroke: #eee; stroke-width: 4; }
+        .timer-fg { fill: none; stroke: var(--primary); stroke-width: 4; stroke-dasharray: 150; stroke-dashoffset: 0; transition: 1s linear; }
+        .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: bold; }
+
+        /* Avatar Stage */
+        .stage { width: 140px; height: 140px; margin: 0 auto 20px; background: #f3edf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+        .avatar-svg { width: 100px; height: 100px; z-index: 2; }
+        .glow { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: var(--primary); filter: blur(30px); opacity: 0.1; transition: 0.3s; }
+
+        /* Controls */
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 20px; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .mic-btn { width: 70px; height: 70px; border-radius: 50%; border: 6px solid #f3edf8; background: var(--primary); color: white; font-size: 24px; cursor: pointer; display: block; margin: 20px auto; transition: 0.3s; }
+        .mic-btn.listening { background: var(--danger); transform: scale(1.1); box-shadow: 0 0 20px rgba(255,71,87,0.3); }
+
+        /* Feedback & Lists */
+        .feedback { background: #fff9db; border-left: 4px solid #f1c40f; padding: 15px; border-radius: 10px; font-size: 13px; margin: 15px 0; color: #856404; display: none; }
+        .leaderboard-row { display: flex; justify-content: space-between; padding: 12px; background: #f9f7fc; border-radius: 10px; margin-bottom: 8px; font-size: 14px; }
+        .current-user { border: 2px solid var(--primary); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo">QUIKLRN AI · CAREER ENGINE</div>
+
+    <div class="screen active" id="step1">
+        <h2 style="text-align: center; color: var(--primary); margin-bottom: 10px;">Get Job Ready</h2>
+        <p style="text-align: center; font-size: 14px; color: #666; margin-bottom: 20px;">Upload docs to start your personalized Viva.</p>
+        <div class="upload-zone" id="upCV" onclick="handleUpload('CV')">📄 Click to Upload Resume (CV)</div>
+        <div class="upload-zone" id="upJD" onclick="handleUpload('JD')">💼 Click to Upload Job Desc (JD)</div>
+        <button class="btn" id="analyzeBtn" onclick="runAnalysis()">Analyze Suitability →</button>
+    </div>
+
+    <div class="screen" id="step2">
+        <h3 style="text-align:center;">Suitability Score: <span id="scoreText" style="color:var(--primary)">82%</span></h3>
+        <div style="height:8px; background:#eee; border-radius:4px; margin:20px 0; overflow:hidden;">
+            <div id="scoreBar" style="height:100%; background:var(--primary); width:0%; transition:1.5s;"></div>
+        </div>
+        <div id="points" style="font-size:14px; line-height:1.8; color:#444;"></div>
+        <button class="btn" onclick="startInterview()">Start Gamified Viva →</button>
+    </div>
+
+    <div class="screen" id="step3">
+        <div class="timer-container" id="timerBox">
+            <svg class="timer-svg"><circle class="timer-bg" cx="25" cy="25" r="23"></circle><circle id="timerFG" class="timer-fg" cx="25" cy="25" r="23"></circle></svg>
+            <div class="timer-text" id="timeVal">60</div>
+        </div>
+        <div style="text-align:center; font-size:11px; font-weight:800; color:var(--primary); margin-bottom:10px;" id="roundLabel">ROUND 1</div>
+        <div class="stage"><div class="glow" id="glow"></div><svg class="avatar-svg" viewBox="0 0 200 200"><circle cx="100" cy="100" r="90" fill="white" /><path id="mouth" d="M70 140 Q100 150 130 140" stroke="#7A319F" stroke-width="8" fill="none" /><circle cx="70" cy="80" r="10" fill="#7A319F" /><circle cx="130" cy="80" r="10" fill="#7A319F" /></svg></div>
+        <p id="question" style="font-weight:600; text-align:center; min-height:60px; font-size:15px;"></p>
+        <div class="feedback" id="feedback"></div>
+        <button class="mic-btn" id="micBtn" onmousedown="listen()" onmouseup="stop()">🎙️</button>
+        <button class="btn" id="nextBtn" style="display:none;" onclick="handleNext()">Continue →</button>
+    </div>
+
+    <div class="screen" id="step4">
+        <h3 style="text-align:center; margin-bottom:20px;">Global Leaderboard</h3>
+        <div id="leaderList"></div>
+        <button class="btn" onclick="downloadPDF()">Download Faculty Report (PDF)</button>
+        <button class="btn" style="background:#eee; color:#333;" onclick="location.reload()">Restart Challenge</button>
+    </div>
+</div>
+
+<script>
+    let cv = false, jd = false, currentR = 0, currentQ = 0, totalScore = 0, timer, timeLeft = 60;
+    const rounds = [
+        { n: "Personality & Etiquette", qs: ["Tell me about your career goals.", "Why should we hire you over other candidates?"], keys: ["passion", "growth", "skills", "fit"] },
+        { n: "Technical (Easy)", qs: ["Explain the most used technology on your CV.", "What is a REST API?"], keys: ["react", "api", "logic", "code"] },
+        { n: "Technical (Hard)", qs: ["How do you handle system scalability?", "Describe a difficult debugging challenge you solved."], keys: ["scale", "optimization", "latency", "async"] },
+        { n: "HR & Negotiation", qs: ["What are your salary expectations?", "How do you handle conflict in a team?"], keys: ["market", "value", "team", "conflict"] }
+    ];
+
+    function handleUpload(id) { 
+        if(id==='CV') cv=true; else jd=true; 
+        document.getElementById('up'+id).classList.add('done'); 
+        document.getElementById('up'+id).innerText = "✅ " + id + " Uploaded";
+    }
+
+    function runAnalysis() {
+        if(!cv || !jd) return alert("Please upload both JD and CV!");
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step2').classList.add('active');
+        setTimeout(() => { 
+            document.getElementById('scoreBar').style.width = "82%"; 
+            document.getElementById('points').innerHTML = "• ✅ Strong match for Core React/Node<br>• ⚠️ Missing: System Design Certs<br>• 💡 Suggestion: Highlight Cloud Projects";
+        }, 500);
+    }
+
+    function startInterview() {
+        document.getElementById('step2').classList.remove('active');
+        document.getElementById('step3').classList.add('active');
+        ask();
+    }
+
+    const synth = window.speechSynthesis, rec = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
+    function speak(t) {
+        const m = new SpeechSynthesisUtterance(t);
+        m.onstart = () => { document.getElementById('mouth').setAttribute('d', "M70 145 Q100 170 130 145"); document.getElementById('glow').style.opacity = "0.5"; };
+        m.onend = () => { document.getElementById('mouth').setAttribute('d', "M70 140 Q100 150 130 140"); document.getElementById('glow').style.opacity = "0.1"; startTimer(); };
+        synth.speak(m);
+    }
+
+    function startTimer() {
+        clearInterval(timer); timeLeft = 60;
+        timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timeVal').innerText = timeLeft;
+            document.getElementById('timerFG').style.strokeDashoffset = 150 - (150 * timeLeft / 60);
+            if(timeLeft <= 0) { clearInterval(timer); stop(); handleNext(); }
+        }, 1000);
+    }
+
+    function ask() {
+        document.getElementById('roundLabel').innerText = `ROUND ${currentR+1}: ${rounds[currentR].n}`;
+        const q = rounds[currentR].qs[currentQ];
+        document.getElementById('question').innerText = q;
+        speak(q);
+    }
+
+    function listen() { rec.start(); document.getElementById('micBtn').classList.add('listening'); clearInterval(timer); }
+    function stop() { rec.stop(); document.getElementById('micBtn').classList.remove('listening'); }
+
+    rec.onresult = (e) => {
+        const ans = e.results[0][0].transcript.toLowerCase();
+        let matches = rounds[currentR].keys.filter(k => ans.includes(k)).length;
+        totalScore += (matches * 10);
+        document.getElementById('feedback').style.display = "block";
+        document.getElementById('feedback').innerText = matches > 0 ? "AI Analysis: Strong use of keywords detected." : "AI Analysis: Try to include more technical specifics.";
+        document.getElementById('nextBtn').style.display = "block";
+    };
+
+    function handleNext() {
+        currentQ++; if(currentQ >= 2) { currentQ = 0; currentR++; }
+        document.getElementById('nextBtn').style.display = "none";
+        document.getElementById('feedback').style.display = "none";
+        if(currentR < 4) ask(); else showLeaderboard();
+    }
+
+    function showLeaderboard() {
+        document.getElementById('step3').classList.remove('active');
+        document.getElementById('step4').classList.add('active');
+        const list = [{n:"Rahul",s:95}, {n:"Priya",s:88}, {n:"You",s:totalScore}, {n:"Vikram",s:65}].sort((a,b)=>b.s-a.s);
+        document.getElementById('leaderList').innerHTML = list.map((i,idx)=>`<div class="leaderboard-row ${i.n==='You'?'current-user':''}"><span>#${idx+1} ${i.n}</span><span>${i.s}%</span></div>`).join('');
+    }
+
+    function downloadPDF() {
+        const doc = new jspdf.jsPDF();
+        doc.text("QUIKLRN FACULTY REPORT", 20, 20);
+        doc.text(`Final Suitability Score: ${totalScore}%`, 20, 40);
+        doc.text("Strengths: Good verbal fluency.", 20, 50);
+        doc.text("Weakness: Technical vocabulary could be wider.", 20, 60);
+        doc.save("Viva_Report.pdf");
+    }
+</script>
+</body>
+</html>
